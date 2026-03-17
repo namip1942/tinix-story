@@ -123,7 +123,7 @@ def build_create_tab():
                 with gr.Column(scale=1):
                     generation_progress = gr.Textbox(label=t("create.gen_status"), lines=15, interactive=False)
                 with gr.Column(scale=2):
-                    chapter_selector = gr.Dropdown(label="Danh sách chương đã tạo", choices=[], interactive=True)
+                    chapter_selector = gr.Dropdown(label="Danh sách chương đã tạo", choices=[], interactive=True, allow_custom_value=True)
                     chapter_content_display = gr.Textbox(label="Nội dung chương", lines=15, interactive=False)
 
         def on_suggest_title(genre, sub_genres, custom_prompt):

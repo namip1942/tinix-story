@@ -62,7 +62,7 @@ def build_continue_tab():
                 with gr.Column(scale=1):
                     continue_status = gr.Textbox(label=t("continue_tab.gen_status"), interactive=False, lines=15)
                 with gr.Column(scale=2):
-                    continue_chapter_selector = gr.Dropdown(label="Danh sách chương đã tạo", choices=[], interactive=True)
+                    continue_chapter_selector = gr.Dropdown(label="Danh sách chương đã tạo", choices=[], interactive=True, allow_custom_value=True)
                     continue_content_display = gr.Textbox(label="Nội dung chương", lines=15, interactive=False)
 
         def on_refresh_continue(current_title):
