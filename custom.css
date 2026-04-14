@@ -56,12 +56,12 @@ body {
   flex-wrap: wrap !important;
   gap: 8px !important;
   padding: 2px 0 0 !important;
-  margin: 0 0 14px 0 !important;
+  margin: -4px 0 14px 0 !important;
   border-bottom: 0 !important;
   background: var(--bg-main) !important;
   overflow: visible !important;
   position: relative !important;
-  z-index: 20 !important;
+  z-index: 5 !important;
   isolation: isolate !important;
 }
 
@@ -81,7 +81,7 @@ body {
   margin: 0 !important;
   box-shadow: none !important;
   position: relative !important;
-  z-index: 30 !important;
+  z-index: 6 !important;
 }
 
 [role="tablist"] button:hover {
@@ -105,6 +105,12 @@ body {
   margin-top: 0 !important;
   position: relative !important;
   z-index: 1 !important;
+  overflow: visible !important;
+}
+
+/* Ensure dropdown panels are never clipped/covered */
+[role="listbox"] {
+  z-index: 9999 !important;
 }
 
 .gr-group,
