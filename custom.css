@@ -48,11 +48,13 @@ body {
 
 [role="tablist"] {
   display: flex !important;
+  align-items: center !important;
   flex-wrap: wrap !important;
   gap: 8px !important;
-  padding: 8px 0 !important;
-  border-bottom: 1px solid var(--line) !important;
+  padding: 8px 0 10px !important;
+  border-bottom: 0 !important;
   background: transparent !important;
+  overflow: visible !important;
 }
 
 [role="tablist"] button {
@@ -68,6 +70,8 @@ body {
   text-decoration: none !important;
   transform: none !important;
   transition: background-color .15s ease, color .15s ease, border-color .15s ease !important;
+  margin: 0 !important;
+  box-shadow: none !important;
 }
 
 [role="tablist"] button:hover {
@@ -79,9 +83,14 @@ body {
   background: linear-gradient(180deg, #3a2a1a, #261b10) !important;
   color: var(--tab-active-text) !important;
   border-color: #6f5330 !important;
-  box-shadow: inset 0 0 0 1px rgba(255, 227, 169, 0.18);
+  box-shadow: inset 0 0 0 1px rgba(255, 227, 169, 0.18), 0 1px 4px rgba(58, 39, 12, 0.12) !important;
   text-decoration: none !important;
   transform: none !important;
+}
+
+/* Force top hero block to warm brown even if inline style is old/purple */
+.gradio-container > .prose:first-of-type > div {
+  background: linear-gradient(135deg, #8b6a3f 0%, #5f4728 100%) !important;
 }
 
 /* Panels */
