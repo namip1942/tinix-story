@@ -9,10 +9,9 @@ import logging
 import tempfile
 from typing import Tuple, Optional
 from datetime import datetime
-from pathlib import Path
+from locales.i18n import t
 
 logger = logging.getLogger(__name__)
-from locales.i18n import t
 
 MODULE_ROOT = os.path.dirname(os.path.abspath(__file__))
 EXPORT_DIR = os.path.join(MODULE_ROOT, "exports")
@@ -57,7 +56,7 @@ def _extract_chapters_from_markdown(text: str) -> list:
         if header_re.match(line.strip()):
             # Lưu chương trước
             if current_chapter:
-                current_chapter['content'] = '\n'.join([l for l in content_lines]).strip()
+                current_chapter['content'] = '\n'.join(content_lines).strip()
                 chapters.append(current_chapter)
 
             # Trích xuất văn bản tiêu đề
@@ -80,7 +79,7 @@ def _extract_chapters_from_markdown(text: str) -> list:
 
     # lưu chương cuối
     if current_chapter:
-        current_chapter['content'] = '\n'.join([l for l in content_lines]).strip()
+        current_chapter['content'] = '\n'.join(content_lines).strip()
         chapters.append(current_chapter)
 
     return chapters
@@ -191,7 +190,7 @@ def export_to_docx(novel_text: str, title: str) -> Tuple[Optional[str], str]:
     """
     try:
         from docx import Document
-        from docx.shared import Pt, Inches, RGBColor
+        from docx.shared import Pt, RGBColor
         from docx.enum.text import WD_ALIGN_PARAGRAPH
         from docx.oxml.ns import qn
     except ImportError:
@@ -264,7 +263,7 @@ def export_to_docx(novel_text: str, title: str) -> Tuple[Optional[str], str]:
             paragraphs = chapter['content'].split('\n\n')
             for para_text in paragraphs:
                 if para_text.strip():
-                    p = doc.add_paragraph(para_text.strip(), style='Normal')
+                    doc.add_paragraph(para_text.strip(), style='Normal')
             
             doc.add_paragraph()  # Dòng trống giữa các chương
         

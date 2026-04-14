@@ -6,11 +6,9 @@ Mô-đun Quản lý dự án - Hỗ trợ lưu, tải, xuất dự án
 import json
 import os
 import re
-import tempfile
 import logging
 from typing import List, Dict, Optional, Tuple
 from datetime import datetime
-from pathlib import Path
 
 from services.novel_generator import NovelProject, Chapter
 from locales.i18n import t
@@ -29,6 +27,10 @@ class ProjectManager:
         s = re.sub(r'[\s_]+', '-', s)
         s = re.sub(r'-+', '-', s).strip('-')
         return s or "untitled"
+
+    @staticmethod
+    def _normalize_user_id(user_id: Optional[str]) -> str:
+        return ProjectManager._slugify(user_id or "default")
     
     @staticmethod
     def create_project(
@@ -37,7 +39,8 @@ class ProjectManager:
         sub_genres: List[str],
         character_setting: str,
         world_setting: str,
-        plot_idea: str
+        plot_idea: str,
+        user_id: str = "default"
     ) -> Tuple[Optional[NovelProject], str]:
         """
         Tạo dự án mới
@@ -49,7 +52,8 @@ class ProjectManager:
             if not title or not title.strip():
                 return None, "Title cannot be empty"
             
-            project_id = ProjectManager._slugify(title)
+            normalized_user = ProjectManager._normalize_user_id(user_id)
+            project_id = f"{normalized_user}__{ProjectManager._slugify(title)}"
             now = datetime.now().isoformat()
             
             project = NovelProject(
@@ -72,7 +76,7 @@ class ProjectManager:
             return None, t("project_manager.create_failed", error=str(e))
     
     @staticmethod
-    def save_project(project: NovelProject) -> Tuple[bool, str]:
+    def save_project(project: NovelProject, user_id: str = "default") -> Tuple[bool, str]:
         """
         Lưu dự án vào SQLite
         
@@ -83,11 +87,12 @@ class ProjectManager:
             if not project or not project.title:
                 return False, "Project data incomplete"
 
+            normalized_user = ProjectManager._normalize_user_id(user_id)
             # Sử dụng project.id hiện có hoặc tạo mới
             if getattr(project, 'id', None):
                 project_id = project.id
             else:
-                project_id = ProjectManager._slugify(project.title)
+                project_id = f"{normalized_user}__{ProjectManager._slugify(project.title)}"
                 project.id = project_id
 
             conn = get_db()
@@ -97,10 +102,11 @@ class ProjectManager:
             # Lưu project
             conn.execute("""
                 INSERT OR REPLACE INTO projects 
-                (id, title, genre, sub_genres, character_setting, world_setting, plot_idea, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, user_id, title, genre, sub_genres, character_setting, world_setting, plot_idea, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 project_id,
+                normalized_user,
                 project.title,
                 project.genre,
                 json.dumps(project.sub_genres if isinstance(project.sub_genres, list) else [], ensure_ascii=False),
@@ -112,14 +118,15 @@ class ProjectManager:
             ))
 
             # Xóa chapters cũ và insert lại
-            conn.execute("DELETE FROM chapters WHERE project_id = ?", (project_id,))
+            conn.execute("DELETE FROM chapters WHERE project_id = ? AND user_id = ?", (project_id, normalized_user))
             for ch in project.chapters:
                 conn.execute("""
                     INSERT INTO chapters 
-                    (project_id, num, title, desc, content, word_count, generated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    (project_id, user_id, num, title, desc, content, word_count, generated_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     project_id,
+                    normalized_user,
                     ch.num,
                     ch.title,
                     ch.desc,
@@ -137,7 +144,7 @@ class ProjectManager:
             return False, t("project_manager.save_failed", error=str(e))
     
     @staticmethod
-    def load_project(project_id: str) -> Tuple[Optional[NovelProject], str]:
+    def load_project(project_id: str, user_id: str = "default") -> Tuple[Optional[NovelProject], str]:
         """
         Tải dự án từ SQLite
         
@@ -145,10 +152,11 @@ class ProjectManager:
             (Đối tượng dự án, Thông tin trạng thái)
         """
         try:
+            normalized_user = ProjectManager._normalize_user_id(user_id)
             conn = get_db()
             
             row = conn.execute(
-                "SELECT * FROM projects WHERE id = ?", (project_id,)
+                "SELECT * FROM projects WHERE id = ? AND user_id = ?", (project_id, normalized_user)
             ).fetchone()
             
             if not row:
@@ -161,7 +169,7 @@ class ProjectManager:
                 sg_str = "[]"
             try:
                 sg_list = json.loads(sg_str) if sg_str else []
-            except:
+            except Exception:
                 sg_list = []
                 
             # Xây dựng lại dự án
@@ -179,7 +187,7 @@ class ProjectManager:
             
             # Tải chapters
             ch_rows = conn.execute(
-                "SELECT * FROM chapters WHERE project_id = ? ORDER BY num", (project_id,)
+                "SELECT * FROM chapters WHERE project_id = ? AND user_id = ? ORDER BY num", (project_id, normalized_user)
             ).fetchall()
             
             for ch_row in ch_rows:
@@ -201,7 +209,7 @@ class ProjectManager:
             return None, t("project_manager.load_failed", error=str(e))
     
     @staticmethod
-    def list_projects() -> List[Dict]:
+    def list_projects(user_id: str = "default") -> List[Dict]:
         """
         Liệt kê tất cả dự án từ SQLite
         
@@ -209,17 +217,19 @@ class ProjectManager:
             Danh sách thông tin dự án
         """
         try:
+            normalized_user = ProjectManager._normalize_user_id(user_id)
             conn = get_db()
             rows = conn.execute(
-                "SELECT id, title, genre, created_at, updated_at FROM projects ORDER BY updated_at DESC"
+                "SELECT id, title, genre, created_at, updated_at FROM projects WHERE user_id = ? ORDER BY updated_at DESC",
+                (normalized_user,)
             ).fetchall()
             
             projects = []
             for row in rows:
                 # Đếm chapters
                 ch_count = conn.execute(
-                    "SELECT COUNT(*) as total, SUM(CASE WHEN content != '' THEN 1 ELSE 0 END) as completed FROM chapters WHERE project_id = ?",
-                    (row["id"],)
+                    "SELECT COUNT(*) as total, SUM(CASE WHEN content != '' THEN 1 ELSE 0 END) as completed FROM chapters WHERE project_id = ? AND user_id = ?",
+                    (row["id"], normalized_user)
                 ).fetchone()
                 
                 projects.append({
@@ -241,21 +251,21 @@ class ProjectManager:
     
 
     @staticmethod
-    def get_project_by_title(project_title: str) -> Optional[Dict]:
+    def get_project_by_title(project_title: str, user_id: str = "default") -> Optional[Dict]:
         """
         Lấy thông tin dự án theo tiêu đề
 
         Returns:
             Từ điển dự án hoặc None
         """
-        projects = ProjectManager.list_projects()
+        projects = ProjectManager.list_projects(user_id=user_id)
         for project in projects:
             if project.get("title") == project_title:
                 return project
         return None
 
     @staticmethod
-    def delete_project(project_id: str) -> Tuple[bool, str]:
+    def delete_project(project_id: str, user_id: str = "default") -> Tuple[bool, str]:
         """
         Xóa dự án từ SQLite
         
@@ -263,8 +273,9 @@ class ProjectManager:
             (Cờ thành công (boolean), Thông tin trạng thái)
         """
         try:
+            normalized_user = ProjectManager._normalize_user_id(user_id)
             conn = get_db()
-            cursor = conn.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+            cursor = conn.execute("DELETE FROM projects WHERE id = ? AND user_id = ?", (project_id, normalized_user))
             conn.commit()
             
             if cursor.rowcount == 0:
@@ -329,10 +340,10 @@ def get_project_manager() -> ProjectManager:
     """Nhận phiên bản quản lý dự án"""
     return ProjectManager()
 
-def list_project_titles():
+def list_project_titles(user_id: str = "default"):
     """Lấy danh sách tiêu đề dự án"""
     try:
-        projects = ProjectManager.list_projects()
+        projects = ProjectManager.list_projects(user_id=user_id)
         return [p["title"] for p in projects]
     except Exception:
         return []

@@ -6,12 +6,12 @@ Mô-đun tạo tiểu thuyết - Hỗ trợ tạo dàn ý, tạo chương, viế
 import re
 import logging
 import json
-import os
 from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass, field
 from datetime import datetime
-from pathlib import Path
 from services.api_client import get_api_client
+from services.genre_manager import GenreManager
+from services.sub_genre_manager import SubGenreManager
 from core.config import get_config
 from locales.i18n import t
 from core.database import get_db
@@ -174,9 +174,6 @@ class OutlineParser:
         return "\n".join(lines)
 
 
-from services.genre_manager import GenreManager
-from services.sub_genre_manager import SubGenreManager
-
 class NovelGenerator:
     """máy phát điện mới"""
     
@@ -226,7 +223,7 @@ class NovelGenerator:
                     sub_genre_details.append(f"- {sg}: {desc}")
                 else:
                     sub_genre_details.append(f"- {sg}")
-            style_desc += f"\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nHãy kết hợp chặt chẽ các đặc điểm của những chủ đề này để làm phong phú cấu trúc cốt truyện."
+            style_desc += "\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nHãy kết hợp chặt chẽ các đặc điểm của những chủ đề này để làm phong phú cấu trúc cốt truyện."
         
         prompt = t("prompts.outline_user",
             genre=genre, title=title,
@@ -269,7 +266,7 @@ class NovelGenerator:
                     sub_genre_details.append(f"- {sg}: {desc}")
                 else:
                     sub_genre_details.append(f"- {sg}")
-            system_prompt += f"\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nVui lòng xem xét các chủ đề này khi đề xuất."
+            system_prompt += "\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nVui lòng xem xét các chủ đề này khi đề xuất."
         
         # Nếu người dùng có prompt tùy chỉnh, ưu tiên ghép chung, nếu không dùng mặc định
         if custom_prompt.strip():
@@ -323,7 +320,7 @@ class NovelGenerator:
                     sub_genre_details.append(f"- {sg}: {desc}")
                 else:
                     sub_genre_details.append(f"- {sg}")
-            system_prompt += f"\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nVui lòng lồng ghép các yếu tố này vào gợi ý."
+            system_prompt += "\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nVui lòng lồng ghép các yếu tố này vào gợi ý."
         
         base_prompt = ""
         if suggest_type == "char":
@@ -396,23 +393,8 @@ class NovelGenerator:
         Returns (Trả về):
             (Nội dung chương, Thông báo lỗi hoặc tin báo thành công)
         """
-        style_desc = self._build_style_description()
-        
-        if genre:
-            genre_desc = GenreManager.get_genre_description(genre)
-            if genre_desc:
-                style_desc += f"\n\nHướng dẫn viết riêng cho thể loại {genre}: {genre_desc}"
-                
-        if sub_genres:
-            sub_genre_details = []
-            for sg in sub_genres:
-                desc = SubGenreManager.get_sub_genre_description(sg)
-                if desc:
-                    sub_genre_details.append(f"- {sg}: {desc}")
-                else:
-                    sub_genre_details.append(f"- {sg}")
-            style_desc += f"\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nHãy kết hợp chặt chẽ các đặc điểm và yếu tố của những chủ đề này vào nội dung chương truyện."
-                
+        style_desc = self._build_chapter_style_description(genre=genre, sub_genres=sub_genres)
+
         target_words = self.config.generation.chapter_target_words
 
         # Lời khuyên để xây dựng sự gắn kết
@@ -424,12 +406,6 @@ class NovelGenerator:
         if context_summary:
             context_prompt = t("prompts.context_prompt", context_summary=context_summary)
 
-        # Lấy thông tin thể loại truyện thông qua class properties (cần get từ CSDL dự án hoặc cấu hình, mượn tạm cách try-except)
-        # Vì hàm `generate_chapter` ko truyền `genre`, ta sẽ thêm tham số hoặc ngầm hiểu thông qua plot/world_setting. 
-        # Tạm thời cứ gán thêm nếu có thể, hoặc yêu cầu truyền thêm `genre` ở hàm gọi. Sẽ cập nhật `system_prompt` chung với outline.
-        genre_desc_prompt = ""
-        # TODO: Sắp tới cần update file `app.py` chỗ gọi hàm `generate_chapter` để truyền thêm Genre vào.
-        
         prompt = t("prompts.chapter_user",
             novel_title=novel_title, chapter_num=chapter_num,
             chapter_title=chapter_title, chapter_desc=chapter_desc,
@@ -503,23 +479,8 @@ class NovelGenerator:
         Yields:
             (Chỉ báo thành công, Chunk văn bản / Thông báo lỗi)
         """
-        style_desc = self._build_style_description()
-        
-        if genre:
-            genre_desc = GenreManager.get_genre_description(genre)
-            if genre_desc:
-                style_desc += f"\n\nHướng dẫn viết riêng cho thể loại {genre}: {genre_desc}"
-                
-        if sub_genres:
-            sub_genre_details = []
-            for sg in sub_genres:
-                desc = SubGenreManager.get_sub_genre_description(sg)
-                if desc:
-                    sub_genre_details.append(f"- {sg}: {desc}")
-                else:
-                    sub_genre_details.append(f"- {sg}")
-            style_desc += f"\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nHãy kết hợp chặt chẽ các đặc điểm và yếu tố của những chủ đề này vào nội dung chương truyện."
-                
+        style_desc = self._build_chapter_style_description(genre=genre, sub_genres=sub_genres)
+
         target_words = self.config.generation.chapter_target_words
 
         continuity_prompt = ""
@@ -611,7 +572,6 @@ class NovelGenerator:
         # Cơ chế thử lại: thử lại khi nội dung quá ngắn
         max_retries = 3
         content = ""
-        success_msg = ""
 
         for attempt in range(max_retries):
             logger.debug(f"Rewrite attempt {attempt + 1}/{max_retries}")
@@ -754,7 +714,6 @@ class NovelGenerator:
         # Cơ chế thử lại: thử lại khi nội dung quá ngắn
         max_retries = 3
         content = ""
-        success_msg = ""
 
         for attempt in range(max_retries):
             logger.debug(f"Polish attempt {attempt + 1}/{max_retries}")
@@ -869,8 +828,6 @@ class NovelGenerator:
             logger.warning("API may have returned status instead of content")
 
         # Phân tích nội dung trả về
-        import re
-        errors = ""
         suggestions = ""
         polished = ""
 
@@ -883,7 +840,7 @@ class NovelGenerator:
             parts = content.split("【")
             for part in parts:
                 if part.startswith(f"{found_errors_h}】"):
-                    errors = part.replace(f"{found_errors_h}】", "").strip()
+                    _ = part.replace(f"{found_errors_h}】", "").strip()
                 elif part.startswith(f"{suggestions_h}】"):
                     suggestions = part.replace(f"{suggestions_h}】", "").strip()
                 elif part.startswith(f"{polished_h}】"):
@@ -944,7 +901,7 @@ class NovelGenerator:
                     sub_genre_details.append(f"- {sg}: {desc}")
                 else:
                     sub_genre_details.append(f"- {sg}")
-            style_desc += f"\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nHãy kết hợp chặt chẽ các đặc điểm và yếu tố của những chủ đề này vào nội dung viết tiếp."
+            style_desc += "\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nHãy kết hợp chặt chẽ các đặc điểm và yếu tố của những chủ đề này vào nội dung viết tiếp."
 
         # Lấy phần cuối cùng của văn bản hiện có làm ngữ cảnh
         previous_content = existing_text[-1500:] if len(existing_text) > 1500 else existing_text
@@ -969,7 +926,6 @@ class NovelGenerator:
         # Cơ chế thử lại
         max_retries = 3
         content = ""
-        success_msg = ""
 
         for attempt in range(max_retries):
             logger.debug(f"Continue attempt {attempt + 1}/{max_retries}")
@@ -1049,7 +1005,7 @@ class NovelGenerator:
                     sub_genre_details.append(f"- {sg}: {desc}")
                 else:
                     sub_genre_details.append(f"- {sg}")
-            style_desc += f"\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nHãy kết hợp chặt chẽ các đặc điểm và yếu tố của những chủ đề này vào nội dung viết tiếp."
+            style_desc += "\n\nCác chủ đề con (Tag) bổ sung:\n" + "\n".join(sub_genre_details) + "\n\nHãy kết hợp chặt chẽ các đặc điểm và yếu tố của những chủ đề này vào nội dung viết tiếp."
 
         previous_content = existing_text[-1500:] if len(existing_text) > 1500 else existing_text
 
@@ -1089,6 +1045,32 @@ class NovelGenerator:
             character_development=gen.character_development,
             plot_complexity=gen.plot_complexity
         )
+
+    def _build_chapter_style_description(self, genre: str = "", sub_genres: List[str] = None) -> str:
+        """Ghép mô tả phong cách + hướng dẫn genre/sub-genre cho luồng sinh chương."""
+        style_desc = self._build_style_description()
+
+        if genre:
+            genre_desc = GenreManager.get_genre_description(genre)
+            if genre_desc:
+                style_desc += f"\n\nHướng dẫn viết riêng cho thể loại {genre}: {genre_desc}"
+
+        if sub_genres:
+            sub_genre_details = []
+            for sg in sub_genres:
+                desc = SubGenreManager.get_sub_genre_description(sg)
+                if desc:
+                    sub_genre_details.append(f"- {sg}: {desc}")
+                else:
+                    sub_genre_details.append(f"- {sg}")
+
+            style_desc += (
+                "\n\nCác chủ đề con (Tag) bổ sung:\n"
+                + "\n".join(sub_genre_details)
+                + "\n\nHãy kết hợp chặt chẽ các đặc điểm và yếu tố của những chủ đề này vào nội dung chương truyện."
+            )
+
+        return style_desc
 
 
 def get_generator() -> NovelGenerator:

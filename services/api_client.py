@@ -6,15 +6,12 @@ Mô-đun Gọi API - Hỗ trợ thử lại, giới hạn tốc độ, bộ nh�
 import time
 import hashlib
 import json
-import os
 import threading
-from typing import List, Dict, Any, Optional, Callable
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from functools import wraps
 import logging
 from openai import OpenAI, RateLimitError, APIError, AuthenticationError, APIConnectionError
-import pickle
 
 from core.config import get_config, Backend
 from locales.i18n import t
@@ -571,8 +568,6 @@ class APIClient:
                         delta = chunk.choices[0].delta
                         # Thử lấy từ content hoặc reasoning/reasoning_content (hỗ trợ DeepSeek R1 và các mô hình tương tự)
                         content_chunk = getattr(delta, 'content', None)
-                        reasoning_chunk = getattr(delta, 'reasoning', None) or getattr(delta, 'reasoning_content', None)
-                        
                         if content_chunk:
                             chunk_count += 1
                             yield True, content_chunk
@@ -611,7 +606,7 @@ class APIClient:
                     timeout=5
                 )
                 
-                response = client.chat.completions.create(
+                client.chat.completions.create(
                     model=backend.model,
                     messages=test_messages,
                     max_tokens=10
@@ -638,7 +633,7 @@ class APIClient:
                 timeout=10
             )
             
-            response = client.chat.completions.create(
+            client.chat.completions.create(
                 model=model,
                 messages=test_messages,
                 max_tokens=10

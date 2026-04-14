@@ -2,6 +2,7 @@ import gradio as gr
 from locales.i18n import t
 from services.project_manager import ProjectManager, list_project_titles
 from utils.exporter import export_to_docx, export_to_txt, export_to_markdown, export_to_html
+from core.session import get_user_id_from_request
 import logging
 
 logger = logging.getLogger(__name__)
@@ -33,21 +34,23 @@ def build_export_tab():
         export_status = gr.Textbox(label=t("projects.export_status"), interactive=False)
         export_download = gr.File(label=t("projects.download_file"), interactive=False)
 
-        def on_refresh_export():
-            titles = list_project_titles()
+        def on_refresh_export(request: gr.Request):
+            user_id = get_user_id_from_request(request)
+            titles = list_project_titles(user_id=user_id)
             return gr.update(choices=titles, value=None)
 
-        def on_export(project_title, format_type):
+        def on_export(project_title, format_type, request: gr.Request):
+            user_id = get_user_id_from_request(request)
             if not project_title:
                 return f"❌ {t('projects.select_project_first')}", None
 
             try:
-                project_data = ProjectManager.get_project_by_title(project_title)
+                project_data = ProjectManager.get_project_by_title(project_title, user_id=user_id)
                 if not project_data:
                     return f"❌ {t('projects.project_not_found')}", None
 
                 project_id = project_data.get("id")
-                project, msg = ProjectManager.load_project(project_id)
+                project, msg = ProjectManager.load_project(project_id, user_id=user_id)
                 if not project:
                     return f"❌ {msg}", None
 

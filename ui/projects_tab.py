@@ -1,6 +1,7 @@
 import gradio as gr
 from locales.i18n import t
 from services.project_manager import ProjectManager, list_project_titles
+from core.session import get_user_id_from_request
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,9 +25,10 @@ def build_projects_tab():
         delete_project_btn = gr.Button(t("projects.delete_btn"), variant="stop")
         project_manage_status = gr.Textbox(label=t("projects.status_label"), interactive=False)
 
-        def on_refresh_projects():
+        def on_refresh_projects(request: gr.Request):
+            user_id = get_user_id_from_request(request)
             try:
-                projects = ProjectManager.list_projects()
+                projects = ProjectManager.list_projects(user_id=user_id)
                 table_data = []
                 for p in projects:
                     table_data.append([
@@ -42,19 +44,20 @@ def build_projects_tab():
                 logger.error(f"Refresh projects failed: {e}")
                 return [], gr.update()
 
-        def on_delete_project(project_title):
+        def on_delete_project(project_title, request: gr.Request):
+            user_id = get_user_id_from_request(request)
             if not project_title or not project_title.strip():
                 return f"❌ {t('projects.select_project_first')}", gr.update(), gr.update()
 
             try:
-                project_data = ProjectManager.get_project_by_title(project_title)
+                project_data = ProjectManager.get_project_by_title(project_title, user_id=user_id)
                 if not project_data:
                     return f"❌ {t('projects.project_not_found')}", gr.update(), gr.update()
 
                 project_id = project_data.get("id")
-                success, msg = ProjectManager.delete_project(project_id)
+                success, msg = ProjectManager.delete_project(project_id, user_id=user_id)
                 if success:
-                    new_table, new_dropdown = on_refresh_projects()
+                    new_table, new_dropdown = on_refresh_projects(request)
                     return f"✅ {t('projects.delete_success')}", new_table, new_dropdown
                 return f"❌ {t('projects.delete_failed')}: {msg}", gr.update(), gr.update()
             except Exception as e:

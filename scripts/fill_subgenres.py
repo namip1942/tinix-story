@@ -1,5 +1,4 @@
 import json
-import os
 
 DESC_MAP = {
     "Xuyên không": "Nhân vật chính từ thế giới thực xuyên đến một thế giới khác, thời đại khác.",
