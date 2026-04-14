@@ -1,160 +1,148 @@
-/* Modern & Aesthetic UI for Tinix Story (tinix-novels) */
-
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+/* TiniX Story - Light purple UI theme (matches requested screenshot) */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-    --primary-color: #6366f1;
-    --primary-hover: #4f46e5;
-    --secondary-color: #64748b;
-    --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    --card-bg: rgba(255, 255, 255, 0.85);
-    --border-radius-lg: 16px;
-    --border-radius-md: 12px;
-    --shadow-soft: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
-    --shadow-hover: 0 20px 30px -10px rgba(0, 0, 0, 0.1);
+  --bg-main: #f5f6fb;
+  --bg-card: #ffffff;
+  --bg-soft: #f8f9ff;
+  --text-main: #22283a;
+  --text-sub: #666f85;
+  --border: #e5e8f2;
+  --accent: #ff7a18;
+  --accent-soft: #fff2e8;
+  --radius: 14px;
+  --shadow: 0 4px 18px rgba(48, 61, 98, 0.08);
 }
 
+html,
 body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
-    background: var(--bg-gradient) !important;
-    min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+  background: var(--bg-main) !important;
+  color: var(--text-main) !important;
 }
 
-h1,
-h2,
-h3 {
-    font-family: 'Outfit', sans-serif !important;
-    font-weight: 700 !important;
-    letter-spacing: -0.02em !important;
-}
-
-/* Header Styling */
-.app-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    padding: 2rem 0;
-}
-
-/* Containers & Cards */
 .gradio-container {
-    max-width: 1200px !important;
+  max-width: 100% !important;
+  background: var(--bg-main) !important;
+  color: var(--text-main) !important;
 }
 
+/* Keep tabs horizontal like screenshot */
+.tabs {
+  display: block !important;
+  min-height: unset !important;
+}
+
+/* Tab bar */
+[role="tablist"] {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+  border-bottom: 1px solid var(--border) !important;
+  margin: 8px 0 16px !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+[role="tablist"] button {
+  border: 0 !important;
+  border-bottom: 3px solid transparent !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #2f3d66 !important;
+  padding: 10px 18px !important;
+  font-weight: 500 !important;
+}
+
+[role="tablist"] button:hover {
+  background: rgba(86, 108, 188, 0.06) !important;
+}
+
+[role="tablist"] button[aria-selected="true"] {
+  color: #3d58ff !important;
+  border-bottom-color: var(--accent) !important;
+}
+
+/* Panels/cards */
+[role="tabpanel"],
 .gr-group,
 .gr-box,
-.gr-form {
-    background-color: var(--card-bg) !important;
-    backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    border-radius: var(--border-radius-lg) !important;
-    box-shadow: var(--shadow-soft) !important;
-    transition: all 0.3s ease !important;
-    padding: 1.5rem !important;
-    margin-bottom: 1.5rem !important;
+.block,
+fieldset,
+.gr-form,
+.gr-accordion,
+.gr-accordion-item {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow) !important;
 }
 
-.gr-group:hover {
-    box-shadow: var(--shadow-hover) !important;
-    transform: translateY(-2px);
+[role="tabpanel"] {
+  padding: 12px !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }
 
-/* Tab Styling */
-.tabs {
-    background: transparent !important;
-    border: none !important;
-    margin-bottom: 2rem !important;
+.gr-accordion .label-wrap,
+.gr-accordion-item summary {
+  font-weight: 700 !important;
+  color: #1f2a44 !important;
 }
 
-.tab-nav {
-    display: flex !important;
-    justify-content: center !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
-    margin-bottom: 1.5rem !important;
+/* Inputs */
+input[type="text"],
+input[type="number"],
+textarea,
+select {
+  border-radius: 12px !important;
+  border: 1px solid #dde2f0 !important;
+  background: #fff !important;
+  color: var(--text-main) !important;
 }
 
-.tabitem {
-    padding: 2rem !important;
-    background: transparent !important;
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #8a9cff !important;
+  box-shadow: 0 0 0 3px rgba(112, 136, 255, 0.18) !important;
 }
 
-button.selected {
-    color: var(--primary-color) !important;
-    border-bottom: 2px solid var(--primary-color) !important;
+label,
+.gradio-container .label,
+.gradio-container .block-label {
+  color: var(--text-sub) !important;
+  font-weight: 600 !important;
 }
 
-/* Button Improvements */
+/* Buttons */
+.gr-button,
+button {
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+}
+
 button.gr-button-primary {
-    background: linear-gradient(135deg, #6366f1, #4f46e5) !important;
-    border: none !important;
-    border-radius: var(--border-radius-md) !important;
-    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
-    font-weight: 600 !important;
-    transition: all 0.2s ease !important;
-    color: white !important;
+  background: linear-gradient(180deg, #6c84ff, #5b6fe4) !important;
+  color: #fff !important;
+  border: 1px solid #4e60ce !important;
 }
 
-button.gr-button-primary:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4) !important;
-    filter: brightness(1.1) !important;
+button.gr-button-secondary {
+  background: #f0f3ff !important;
+  color: #33406a !important;
+  border: 1px solid #d9def0 !important;
 }
 
 button.gr-button-stop {
-    background: linear-gradient(135deg, #f43f5e, #e11d48) !important;
-    border-radius: var(--border-radius-md) !important;
-    box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3) !important;
-    font-weight: 600 !important;
-    transition: all 0.2s ease !important;
-    color: white !important;
+  background: var(--accent-soft) !important;
+  color: #8d420f !important;
+  border: 1px solid #ffd3b5 !important;
 }
 
-/* Inputs & Textboxes */
-textarea,
-input[type="text"],
-input[type="number"] {
-    border-radius: var(--border-radius-md) !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
-    padding: 0.75rem !important;
-    background-color: rgba(255, 255, 255, 0.9) !important;
-    transition: border-color 0.2s ease !important;
-}
-
-textarea:focus,
-input[type="text"]:focus {
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
-}
-
-/* Micro-animations */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.gradio-container {
-    animation: fadeIn 0.8s ease-out;
-}
-
-/* Custom classes we'll add to app.py */
-.main-title h1 {
-    font-size: 3rem !important;
-    background: linear-gradient(to right, #6366f1, #ec4899);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 0.25rem !important;
-}
-
-.subtitle p {
-    color: var(--secondary-color) !important;
-    font-size: 1.1rem !important;
-    opacity: 0.8;
+/* Footer text */
+.gradio-container p {
+  color: var(--text-sub);
 }
