@@ -7,7 +7,7 @@ import os
 import re
 import logging
 import tempfile
-from typing import Tuple, List, Optional, IO, Dict
+from typing import Tuple, List, IO
 from enum import Enum
 from dataclasses import dataclass
 from locales.i18n import t

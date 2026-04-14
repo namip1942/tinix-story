@@ -5,6 +5,7 @@ from services.project_manager import ProjectManager, list_project_titles
 from services.novel_generator import Chapter
 from services.style_manager import StyleManager
 from core.state import app_state
+from core.session import get_user_id_from_request
 import logging
 
 logger = logging.getLogger(__name__)
@@ -77,26 +78,28 @@ def build_continue_tab():
                     continue_chapter_selector = gr.Dropdown(label="Danh sách chương đã tạo", choices=[], interactive=True, allow_custom_value=True)
                     continue_content_display = gr.Textbox(label="Nội dung chương", lines=15, interactive=False)
 
-        def on_refresh_continue(current_title):
-            titles = list_project_titles()
+        def on_refresh_continue(current_title, request: gr.Request):
+            user_id = get_user_id_from_request(request)
+            titles = list_project_titles(user_id=user_id)
             if current_title in titles:
-                info, next_ch, outline_text, chapter_choices = on_continue_project_select(current_title)
+                info, next_ch, outline_text, chapter_choices = on_continue_project_select(current_title, request)
                 return gr.update(choices=titles, value=current_title), info, next_ch, outline_text, gr.update(choices=chapter_choices, value=chapter_choices[-1] if chapter_choices else None)
             else:
                 return gr.update(choices=titles, value=None), t("continue_tab.no_project_loaded"), 1, "Chưa tải dự án...", gr.update(choices=[], value=None)
 
-        def on_continue_project_select(project_title):
+        def on_continue_project_select(project_title, request: gr.Request):
+            user_id = get_user_id_from_request(request)
             if not project_title:
                 return t("continue_tab.no_project_loaded"), 1, "Chưa tải dự án...", []
             try:
-                project_data = ProjectManager.get_project_by_title(project_title)
+                project_data = ProjectManager.get_project_by_title(project_title, user_id=user_id)
                 if not project_data:
                     return f"❌ {t('continue_tab.project_not_found')}", 1, "Chưa tải dự án..."
 
                 project_id = project_data.get("id")
-                project, msg = ProjectManager.load_project(project_id)
+                project, msg = ProjectManager.load_project(project_id, user_id=user_id)
                 if project:
-                    app_state.current_project = project
+                    app_state.set_current_project(project, user_id=user_id)
                     completed = project.get_completed_count()
                     total_chapters = len(project.chapters)
                     next_ch = completed + 1
@@ -145,17 +148,21 @@ def build_continue_tab():
             except Exception as e:
                 return f"❌ {str(e)}", 1, "Lỗi khi tải dàn ý", []
 
-        def on_continue_chapter_select(chapter_title):
-            if not chapter_title or not app_state.current_project:
+        def on_continue_chapter_select(chapter_title, request: gr.Request):
+            user_id = get_user_id_from_request(request)
+            current_project = app_state.get_current_project(user_id=user_id)
+            if not chapter_title or not current_project:
                 return ""
-            for ch in app_state.current_project.chapters:
+            for ch in current_project.chapters:
                 if f"Chương {ch.num}: {ch.title}" == chapter_title:
                     return ch.content or ""
             return ""
 
-        def on_continue_generate(project_title, ch_num, ch_title, ch_desc, target_words, custom_prompt, mem_type, mem_chaps, use_reflection, selected_style):
+        def on_continue_generate(project_title, ch_num, ch_title, ch_desc, target_words, custom_prompt, mem_type, mem_chaps, use_reflection, selected_style, request: gr.Request):
+            user_id = get_user_id_from_request(request)
             yield "⏳ Đang chuẩn bị dữ liệu...", "", gr.update(interactive=False), gr.update(), gr.update()
-            if not app_state.current_project:
+            current_project = app_state.get_current_project(user_id=user_id)
+            if not current_project:
                 yield f"❌ {t('continue_tab.no_project_selected')}", "", gr.update(interactive=True), gr.update(), gr.update()
                 return
 
@@ -164,7 +171,7 @@ def build_continue_tab():
                 gen.config.generation.writing_style = selected_style
 
             gen = app_state.get_generator()
-            project = app_state.current_project
+            project = current_project
             
             # Check if the requested chapter exists in the outline
             if not any(int(ch.num) == int(ch_num) for ch in project.chapters):
@@ -228,7 +235,7 @@ def build_continue_tab():
                     project.chapters.append(new_ch)
                     project.chapters.sort(key=lambda x: x.num)
 
-                ProjectManager.save_project(project)
+                ProjectManager.save_project(project, user_id=user_id)
                 
                 # Format the outline list
                 outline_lines = []
@@ -245,9 +252,11 @@ def build_continue_tab():
             else:
                 yield f"❌ {msg}", "", gr.update(interactive=True), gr.update(), gr.update()
 
-        def on_continue_auto_generate(project_title, target_words, custom_prompt, mem_type, mem_chaps, use_reflection, selected_style, progress=gr.Progress()):
+        def on_continue_auto_generate(project_title, target_words, custom_prompt, mem_type, mem_chaps, use_reflection, selected_style, request: gr.Request, progress=gr.Progress()):
+            user_id = get_user_id_from_request(request)
             yield "⏳ Đang chuẩn bị dữ liệu...", "", gr.update(interactive=False), gr.update(interactive=False), gr.update(), gr.update()
-            if not app_state.current_project:
+            current_project = app_state.get_current_project(user_id=user_id)
+            if not current_project:
                 yield f"❌ {t('continue_tab.no_project_selected')}", "", gr.update(interactive=True), gr.update(interactive=True), gr.update(), gr.update()
                 return
 
@@ -256,9 +265,9 @@ def build_continue_tab():
                 gen.config.generation.writing_style = selected_style
 
             gen = app_state.get_generator()
-            project = app_state.current_project
-            app_state.is_generating = True
-            app_state.stop_requested = False
+            project = current_project
+            app_state.set_is_generating(True, user_id=user_id)
+            app_state.set_stop_requested(False, user_id=user_id)
 
             blank_chapters = [ch for ch in project.chapters if not getattr(ch, 'content', None)]
             if not blank_chapters:
@@ -271,7 +280,7 @@ def build_continue_tab():
             last_content = ""
 
             for i, ch in enumerate(blank_chapters):
-                if app_state.stop_requested:
+                if app_state.get_stop_requested(user_id=user_id):
                     results.append("\n⚠️ Đã dừng sinh tự động!")
                     yield "\n".join(results), last_content, gr.update(interactive=True), gr.update(interactive=True), gr.update(), gr.update()
                     break
@@ -321,7 +330,7 @@ def build_continue_tab():
                     ch.content = content
                     ch.word_count = len(content)
                     ch.generated_at = datetime.now().isoformat()
-                    ProjectManager.save_project(project)
+                    ProjectManager.save_project(project, user_id=user_id)
                     last_content = content
                     
                     # Format the outline list
@@ -339,16 +348,17 @@ def build_continue_tab():
                     yield "\n".join(results), content, gr.update(interactive=False), gr.update(interactive=False), gr.update(value=outline_text), gr.update(choices=chapter_choices, value=selected_choice)
                 else:
                     results.append(f"❌ Lỗi ở chương {ch.num}: {msg}")
-                    app_state.stop_requested = True
+                    app_state.set_stop_requested(True, user_id=user_id)
                     yield "\n".join(results), last_content, gr.update(interactive=True), gr.update(interactive=True), gr.update(), gr.update()
                     break
 
-            app_state.is_generating = False
+            app_state.set_is_generating(False, user_id=user_id)
             results.append("\n🎉 Hoàn thành chuỗi viết tự động!")
             yield "\n".join(results), last_content, gr.update(interactive=True), gr.update(interactive=True), gr.update(), gr.update()
 
-        def on_continue_stop():
-            app_state.stop_requested = True
+        def on_continue_stop(request: gr.Request):
+            user_id = get_user_id_from_request(request)
+            app_state.set_stop_requested(True, user_id=user_id)
             return "⏸️ Đang dừng..."
 
         refresh_continue_btn.click(

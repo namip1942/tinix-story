@@ -75,6 +75,7 @@ def init_db(conn: Optional[sqlite3.Connection] = None) -> None:
 
         CREATE TABLE IF NOT EXISTS generation_cache (
             project_id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL DEFAULT 'default',
             data TEXT NOT NULL,
             updated_at TEXT NOT NULL
         );
@@ -82,14 +83,16 @@ def init_db(conn: Optional[sqlite3.Connection] = None) -> None:
         CREATE TABLE IF NOT EXISTS chapter_summaries (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             project_id TEXT NOT NULL,
+            user_id TEXT NOT NULL DEFAULT 'default',
             chapter_num INTEGER NOT NULL,
             summary TEXT NOT NULL,
             generated_at TEXT NOT NULL,
-            UNIQUE(project_id, chapter_num)
+            UNIQUE(project_id, user_id, chapter_num)
         );
 
         CREATE TABLE IF NOT EXISTS projects (
             id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL DEFAULT 'default',
             title TEXT NOT NULL,
             genre TEXT NOT NULL DEFAULT '',
             sub_genres TEXT NOT NULL DEFAULT '[]',
@@ -103,6 +106,7 @@ def init_db(conn: Optional[sqlite3.Connection] = None) -> None:
         CREATE TABLE IF NOT EXISTS chapters (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             project_id TEXT NOT NULL,
+            user_id TEXT NOT NULL DEFAULT 'default',
             num INTEGER NOT NULL,
             title TEXT NOT NULL DEFAULT '',
             desc TEXT NOT NULL DEFAULT '',
@@ -110,7 +114,7 @@ def init_db(conn: Optional[sqlite3.Connection] = None) -> None:
             word_count INTEGER NOT NULL DEFAULT 0,
             generated_at TEXT,
             FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-            UNIQUE(project_id, num)
+            UNIQUE(project_id, user_id, num)
         );
     """)
     
@@ -119,6 +123,16 @@ def init_db(conn: Optional[sqlite3.Connection] = None) -> None:
         conn.execute("ALTER TABLE projects ADD COLUMN sub_genres TEXT NOT NULL DEFAULT '[]'")
     except sqlite3.OperationalError:
         pass # Đã có cột
+
+    # Bổ sung cột user_id cho mô hình đa người dùng (nếu DB cũ)
+    for table_name in ("projects", "chapters", "generation_cache", "chapter_summaries"):
+        try:
+            conn.execute(f"ALTER TABLE {table_name} ADD COLUMN user_id TEXT NOT NULL DEFAULT 'default'")
+        except sqlite3.OperationalError:
+            pass
+
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_projects_user_updated ON projects(user_id, updated_at DESC)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_chapters_project_user ON chapters(project_id, user_id, num)")
         
     conn.commit()
     logger.info("Database tables initialized")

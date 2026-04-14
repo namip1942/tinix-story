@@ -1,6 +1,5 @@
 import gradio as gr
 from locales.i18n import t
-from services.novel_generator import get_preset_templates
 from services.genre_manager import GenreManager
 from services.style_manager import StyleManager
 from utils.file_parser import parse_novel_file

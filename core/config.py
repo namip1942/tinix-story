@@ -5,10 +5,9 @@ Mô-đun Quản lý cấu hình - Hỗ trợ mã hóa thông tin nhạy cảm, q
 """
 import json
 import os
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 from datetime import datetime
-import hashlib
 import logging
 from locales.i18n import t
 from core.database import get_db

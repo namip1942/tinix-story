@@ -4,31 +4,10 @@ Tích hợp hệ thống sinh tiểu thuyết, quản lý dự án, xuất file
 """
 
 import gradio as gr
-import logging
-import threading
-import json
-from typing import List, Tuple, Optional, Dict, Any
 from pathlib import Path
-from datetime import datetime
 import os
 
-# Import các module hiện có
-from services.api_client import APIClient, get_api_client, reinit_api_client
-from core.config import get_config, ConfigManager, Backend, GenerationConfig, API_PROVIDERS
-from services.novel_generator import (
-    NovelGenerator, NovelProject, Chapter, OutlineParser,
-    get_preset_templates, get_generator,
-    save_generation_cache, load_generation_cache, clear_generation_cache,
-    list_generation_caches, get_cache_size
-)
-from services.project_manager import ProjectManager
-from core.config_api import ConfigAPIManager
-from utils.exporter import export_to_docx, export_to_txt, export_to_markdown, export_to_html
-from services.genre_manager import GenreManager
-from services.sub_genre_manager import SubGenreManager
-from utils.file_parser import parse_novel_file
 from locales.i18n import t
-from core.database import get_db
 from core.logger import get_logger
 
 # ==================== Cấu hình Logging ====================
@@ -44,10 +23,6 @@ WEB_PORT = int(os.getenv("NOVEL_TOOL_PORT", os.getenv("PORT", "7860")))
 WEB_SHARE = os.getenv("NOVEL_TOOL_SHARE", "false").lower() in ("1", "true", "yes")
 
 
-from core.state import app_state
-from services.project_manager import ProjectManager, list_project_titles
-
-
 # ==================== Giao diện chính ====================
 
 def create_main_ui():
@@ -60,7 +35,7 @@ def create_main_ui():
         with open(css_path, 'r', encoding='utf-8') as f:
             custom_css = f.read()
 
-    with gr.Blocks(title=t("app.title")) as app:
+    with gr.Blocks(title=t("app.title"), css=custom_css) as app:
         # Header
         gr.Markdown(f"""
         <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; margin-bottom: 20px;">
@@ -105,13 +80,6 @@ def main():
 
     # Tạo UI
     app = create_main_ui()
-
-    # Tải CSS
-    custom_css = ""
-    css_path = Path("custom.css")
-    if css_path.exists():
-        with open(css_path, 'r', encoding='utf-8') as f:
-            custom_css = f.read()
 
     # Khởi động
     logger.info(t("app.gradio_start", port=WEB_PORT))

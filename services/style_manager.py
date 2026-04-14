@@ -1,8 +1,7 @@
 import os
 import json
 import logging
-from typing import Dict, List, Optional
-from locales.i18n import t
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 

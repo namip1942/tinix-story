@@ -11,6 +11,7 @@ from services.genre_manager import GenreManager
 from services.sub_genre_manager import SubGenreManager
 from services.style_manager import StyleManager
 from core.state import app_state
+from core.session import get_user_id_from_request
 import logging
 
 logger = logging.getLogger(__name__)
@@ -211,8 +212,9 @@ def build_create_tab():
             )
             return content, msg
 
-        def on_auto_generate(title, genre, sub_genres, char_setting, world_setting, plot_idea, outline_text, mem_type, mem_chaps, use_reflection, selected_style, progress=gr.Progress()):
+        def on_auto_generate(title, genre, sub_genres, char_setting, world_setting, plot_idea, outline_text, mem_type, mem_chaps, use_reflection, selected_style, request: gr.Request, progress=gr.Progress()):
             """Tự động tạo toàn bộ tiểu thuyết"""
+            user_id = get_user_id_from_request(request)
             gen = app_state.get_generator()
             
             # Cập nhật style vào config hiện tại
@@ -226,19 +228,19 @@ def build_create_tab():
 
             project, create_msg = ProjectManager.create_project(
                 title, genre, sub_genres or [],
-                char_setting, world_setting, plot_idea
+                char_setting, world_setting, plot_idea, user_id=user_id
             )
             if not project:
                 yield f"❌ {create_msg}", gr.update()
                 return
 
             project.chapters = chapters
-            app_state.current_project = project
-            app_state.is_generating = True
-            app_state.stop_requested = False
+            app_state.set_current_project(project, user_id=user_id)
+            app_state.set_is_generating(True, user_id=user_id)
+            app_state.set_stop_requested(False, user_id=user_id)
 
             # Save immediately to ensure chapter titles are stored even if generation is stopped early
-            ProjectManager.save_project(project)
+            ProjectManager.save_project(project, user_id=user_id)
 
             results = [f"📋 Đã phân tích {len(chapters)} chương", f"💾 {create_msg}"]
             yield "\n".join(results), gr.update(choices=[], value=None)
@@ -246,7 +248,7 @@ def build_create_tab():
             generated_chapters = []
 
             for i, chapter in enumerate(chapters):
-                if app_state.stop_requested:
+                if app_state.get_stop_requested(user_id=user_id):
                     results.append("\n⚠️ Đã dừng sinh!")
                     yield "\n".join(results), gr.update(choices=generated_chapters)
                     break
@@ -297,7 +299,7 @@ def build_create_tab():
                     chapter.word_count = len(content)
                     chapter.generated_at = datetime.now().isoformat()
                     results.append(f"✅ Chương {chapter.num}: {len(content)} từ")
-                    ProjectManager.save_project(project)
+                    ProjectManager.save_project(project, user_id=user_id)
                     chapter_name = f"Chương {chapter.num}: {chapter.title}"
                     generated_chapters.append(chapter_name)
                     yield "\n".join(results), gr.update(choices=generated_chapters, value=chapter_name)
@@ -305,21 +307,24 @@ def build_create_tab():
                     results.append(f"❌ Chương {chapter.num}: {msg}")
                     yield "\n".join(results), gr.update(choices=generated_chapters)
 
-            app_state.is_generating = False
+            app_state.set_is_generating(False, user_id=user_id)
             total_words = sum(ch.word_count for ch in chapters if ch.content)
             results.append(f"\n🎉 Hoàn thành! Tổng: {total_words} từ")
             yield "\n".join(results), gr.update(choices=generated_chapters)
 
-        def on_chapter_select(chapter_title):
-            if not app_state.current_project or not chapter_title:
+        def on_chapter_select(chapter_title, request: gr.Request):
+            user_id = get_user_id_from_request(request)
+            current_project = app_state.get_current_project(user_id=user_id)
+            if not current_project or not chapter_title:
                 return ""
-            for ch in app_state.current_project.chapters:
+            for ch in current_project.chapters:
                 if f"Chương {ch.num}: {ch.title}" == chapter_title:
                     return ch.content or ""
             return ""
 
-        def on_stop():
-            app_state.stop_requested = True
+        def on_stop(request: gr.Request):
+            user_id = get_user_id_from_request(request)
+            app_state.set_stop_requested(True, user_id=user_id)
             return "⏸️ Đang dừng..."
 
         # Bind events
