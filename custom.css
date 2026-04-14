@@ -52,16 +52,17 @@ body {
 
 [role="tablist"] {
   display: flex !important;
-  align-items: center !important;
+  align-items: flex-end !important;
   flex-wrap: wrap !important;
   gap: 8px !important;
-  padding: 8px 0 10px !important;
-  margin: 0 0 8px 0 !important;
+  padding: 2px 0 0 !important;
+  margin: 0 0 14px 0 !important;
   border-bottom: 0 !important;
-  background: transparent !important;
+  background: var(--bg-main) !important;
   overflow: visible !important;
   position: relative !important;
   z-index: 20 !important;
+  isolation: isolate !important;
 }
 
 [role="tablist"] button {
@@ -79,6 +80,8 @@ body {
   transition: background-color .15s ease, color .15s ease, border-color .15s ease !important;
   margin: 0 !important;
   box-shadow: none !important;
+  position: relative !important;
+  z-index: 30 !important;
 }
 
 [role="tablist"] button:hover {
@@ -98,7 +101,7 @@ body {
 /* Panels */
 [role="tabpanel"] {
   background: transparent !important;
-  padding: 2px 4px 8px !important;
+  padding: 0 4px 8px !important;
   margin-top: 0 !important;
   position: relative !important;
   z-index: 1 !important;
