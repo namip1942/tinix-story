@@ -41,6 +41,10 @@ body {
   font-family: 'Playfair Display', serif !important;
 }
 
+.app-hero {
+  background: linear-gradient(135deg, #8b6a3f 0%, #5f4728 100%) !important;
+}
+
 /* Global tabs */
 .tabs {
   display: block !important;
@@ -52,9 +56,12 @@ body {
   flex-wrap: wrap !important;
   gap: 8px !important;
   padding: 8px 0 10px !important;
+  margin: 0 0 8px 0 !important;
   border-bottom: 0 !important;
   background: transparent !important;
   overflow: visible !important;
+  position: relative !important;
+  z-index: 20 !important;
 }
 
 [role="tablist"] button {
@@ -88,15 +95,13 @@ body {
   transform: none !important;
 }
 
-/* Force top hero block to warm brown even if inline style is old/purple */
-.gradio-container > .prose:first-of-type > div {
-  background: linear-gradient(135deg, #8b6a3f 0%, #5f4728 100%) !important;
-}
-
 /* Panels */
 [role="tabpanel"] {
   background: transparent !important;
-  padding: 8px 4px !important;
+  padding: 2px 4px 8px !important;
+  margin-top: 0 !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 .gr-group,
