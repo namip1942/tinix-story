@@ -1,17 +1,25 @@
-/* TiniX Story - Light purple UI theme (matches requested screenshot) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* TiniX Story - Vintage cream theme */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
 :root {
-  --bg-main: #f5f6fb;
-  --bg-card: #ffffff;
-  --bg-soft: #f8f9ff;
-  --text-main: #22283a;
-  --text-sub: #666f85;
-  --border: #e5e8f2;
-  --accent: #ff7a18;
-  --accent-soft: #fff2e8;
-  --radius: 14px;
-  --shadow: 0 4px 18px rgba(48, 61, 98, 0.08);
+  --bg-main: #f3ecdd;
+  --bg-soft: #f8f1e3;
+  --bg-card: #fffaf0;
+  --line: #d8c7a4;
+  --line-strong: #b59763;
+
+  --text-main: #2f2418;
+  --text-sub: #6f6048;
+
+  --tab-bg: #eadcc0;
+  --tab-active-bg: #2f2114;
+  --tab-active-text: #f6e7cb;
+  --accent: #c69a45;
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --shadow-soft: 0 4px 14px rgba(58, 39, 12, 0.08);
 }
 
 html,
@@ -23,49 +31,59 @@ body {
 
 .gradio-container {
   max-width: 100% !important;
-  background: var(--bg-main) !important;
+  background: linear-gradient(180deg, #f7f1e5 0%, #f2e9d8 100%) !important;
   color: var(--text-main) !important;
 }
 
-/* Keep tabs horizontal like screenshot */
-.tabs {
-  display: block !important;
-  min-height: unset !important;
+.gradio-container h1,
+.gradio-container h2,
+.gradio-container h3 {
+  font-family: 'Playfair Display', serif !important;
 }
 
-/* Tab bar */
+/* Global tabs */
+.tabs {
+  display: block !important;
+}
+
 [role="tablist"] {
   display: flex !important;
-  flex-direction: row !important;
   flex-wrap: wrap !important;
-  gap: 4px !important;
-  border-bottom: 1px solid var(--border) !important;
-  margin: 8px 0 16px !important;
-  padding: 0 !important;
+  gap: 8px !important;
+  padding: 8px 0 !important;
+  border-bottom: 1px solid var(--line) !important;
   background: transparent !important;
 }
 
 [role="tablist"] button {
-  border: 0 !important;
-  border-bottom: 3px solid transparent !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  color: #2f3d66 !important;
-  padding: 10px 18px !important;
-  font-weight: 500 !important;
+  border: 1px solid #cdb68b !important;
+  border-bottom: 2px solid #b9975a !important;
+  border-radius: 12px !important;
+  background: linear-gradient(180deg, #efe2c6, #e5d4b0) !important;
+  color: #4d3a1f !important;
+  padding: 9px 14px !important;
+  font-weight: 600 !important;
+  transition: all .15s ease !important;
 }
 
 [role="tablist"] button:hover {
-  background: rgba(86, 108, 188, 0.06) !important;
+  filter: brightness(1.02);
+  transform: translateY(-1px);
 }
 
 [role="tablist"] button[aria-selected="true"] {
-  color: #3d58ff !important;
-  border-bottom-color: var(--accent) !important;
+  background: linear-gradient(180deg, #3a2a1a, #261b10) !important;
+  color: var(--tab-active-text) !important;
+  border-color: #6f5330 !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 227, 169, 0.18);
 }
 
-/* Panels/cards */
-[role="tabpanel"],
+/* Panels */
+[role="tabpanel"] {
+  background: transparent !important;
+  padding: 8px 4px !important;
+}
+
 .gr-group,
 .gr-box,
 .block,
@@ -74,22 +92,15 @@ fieldset,
 .gr-accordion,
 .gr-accordion-item {
   background: var(--bg-card) !important;
-  border: 1px solid var(--border) !important;
-  border-radius: var(--radius) !important;
-  box-shadow: var(--shadow) !important;
-}
-
-[role="tabpanel"] {
-  padding: 12px !important;
-  border: 0 !important;
-  box-shadow: none !important;
-  background: transparent !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--radius-md) !important;
+  box-shadow: var(--shadow-soft) !important;
 }
 
 .gr-accordion .label-wrap,
 .gr-accordion-item summary {
+  color: #3d2e1c !important;
   font-weight: 700 !important;
-  color: #1f2a44 !important;
 }
 
 /* Inputs */
@@ -97,17 +108,17 @@ input[type="text"],
 input[type="number"],
 textarea,
 select {
-  border-radius: 12px !important;
-  border: 1px solid #dde2f0 !important;
-  background: #fff !important;
+  background: #fffdf8 !important;
+  border: 1px solid #d3c3a6 !important;
+  border-radius: var(--radius-sm) !important;
   color: var(--text-main) !important;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: #8a9cff !important;
-  box-shadow: 0 0 0 3px rgba(112, 136, 255, 0.18) !important;
+  border-color: #b3873f !important;
+  box-shadow: 0 0 0 3px rgba(198, 154, 69, 0.2) !important;
 }
 
 label,
@@ -118,31 +129,46 @@ label,
 }
 
 /* Buttons */
-.gr-button,
-button {
-  border-radius: 12px !important;
+button,
+.gr-button {
+  border-radius: 11px !important;
   font-weight: 600 !important;
 }
 
 button.gr-button-primary {
-  background: linear-gradient(180deg, #6c84ff, #5b6fe4) !important;
-  color: #fff !important;
-  border: 1px solid #4e60ce !important;
+  background: linear-gradient(180deg, #d4b15e, #b58a35) !important;
+  color: #2b1d08 !important;
+  border: 1px solid #9f7423 !important;
 }
 
 button.gr-button-secondary {
-  background: #f0f3ff !important;
-  color: #33406a !important;
-  border: 1px solid #d9def0 !important;
+  background: #f7edd8 !important;
+  color: #5a4421 !important;
+  border: 1px solid #d4bc8f !important;
 }
 
 button.gr-button-stop {
-  background: var(--accent-soft) !important;
-  color: #8d420f !important;
-  border: 1px solid #ffd3b5 !important;
+  background: #fcefe8 !important;
+  color: #8b3b1d !important;
+  border: 1px solid #e0b49a !important;
 }
 
-/* Footer text */
-.gradio-container p {
-  color: var(--text-sub);
+/* Settings tab readability tweaks */
+.gradio-container .prose blockquote {
+  margin: 8px 0 14px !important;
+  border-left: 4px solid #c69a45 !important;
+  background: #fbf4e8 !important;
+  color: #5b4830 !important;
+}
+
+/* Tables and misc */
+table,
+th,
+td {
+  border-color: #d7c7a5 !important;
+}
+
+th {
+  background: #efe2c5 !important;
+  color: #4a351b !important;
 }
